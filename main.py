@@ -39,7 +39,6 @@ def captcha():
     return data.get('newtoken'), data.get('newimage')
 
 def save_captcha_image(base64_data, filename="captcha.png"):
-    """Mengubah base64 dari response API menjadi file gambar"""
     if "," in base64_data:
         base64_data = base64_data.split(",", 1)[1]
     image_bytes = base64.b64decode(base64_data)
@@ -80,7 +79,6 @@ def main():
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Ambil captcha, kirim gambar ke user, minta jawaban captcha"""
     await update.message.reply_text("⏳ Mengambil captcha...")
 
     token, image_base64 = captcha()
@@ -89,20 +87,20 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['token'] = token
 
     with open("captcha.png", "rb") as img:
-        await update.message.reply_photo(img, caption="🔐 Masukkan angka captcha yang terlihat pada gambar:")
+        await update.message.reply_photo(img, caption="Masukkan angka captcha yang terlihat pada gambar:")
 
     return CAPTCHA
 
 
 async def handle_captcha(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['captcha'] = update.message.text
-    await update.message.reply_text("👤 Masukkan username (NIM) Anda:")
+    await update.message.reply_text("Masukkan username (NIM) Anda:")
     return USERNAME
 
 
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data['username'] = update.message.text
-    await update.message.reply_text("🔑 Masukkan password Anda:")
+    await update.message.reply_text("Masukkan password Anda:")
     return PASSWORD
 
 
@@ -114,7 +112,7 @@ async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token      = context.user_data['token']
     captcha_r  = context.user_data['captcha']
 
-    await update.message.reply_text("⏳ Mencoba login...")
+    await update.message.reply_text("Mencoba login...")
 
     try:
         res, cookies_dict = login(username, password, token, captcha_r)
@@ -125,33 +123,32 @@ async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if res.status_code == 200:
             cookies_info = "\n".join([f"  {k}: {v}" for k, v in cookies_dict.items()])
             await update.message.reply_text(
-                f"✅ Login berhasil! (Status: {res.status_code})\n"
+                f"Login berhasil! (Status: {res.status_code})\n"
                 f"Username: {username}\n\n"
-                f"🍪 Cookies tersimpan di cookies.json:\n{cookies_info}"
+                f"Cookies tersimpan di cookies.json:\n{cookies_info}"
             )
 
-            await update.message.reply_text("⏳ Redirect ke mahasiswa.udb.ac.id...")
+            await update.message.reply_text("Redirect ke mahasiswa.udb.ac.id...")
             afterlogin()
 
-            await update.message.reply_text("⏳ Mengambil halaman main...")
+            await update.message.reply_text("Mengambil halaman main...")
             main_res = main()
-            await update.message.reply_text(f"📄 main.html disimpan (Status: {main_res.status_code})")
+            await update.message.reply_text(f"main.html disimpan (Status: {main_res.status_code})")
         else:
             await update.message.reply_text(
-                f"❌ Login gagal! (Status: {res.status_code})\n"
+                f"Login gagal! (Status: {res.status_code})\n"
                 "Coba lagi dengan /start"
             )
     except Exception as e:
-        await update.message.reply_text(f"🚨 Error: {e}")
+        await update.message.reply_text(f"Error: {e}")
 
     context.user_data.clear()
     return ConversationHandler.END
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Batalkan proses login"""
     context.user_data.clear()
-    await update.message.reply_text("❌ Proses login dibatalkan. Ketik /start untuk memulai lagi.")
+    await update.message.reply_text("Proses login dibatalkan. Ketik /start untuk memulai lagi.")
     return ConversationHandler.END
 
 
@@ -171,5 +168,5 @@ if __name__ == "__main__":
 
     app.add_handler(conv_handler)
 
-    print("🤖 Bot berjalan... Tekan Ctrl+C untuk berhenti.")
+    print("Bot berjalan... Tekan Ctrl+C untuk berhenti.")
     app.run_polling()
