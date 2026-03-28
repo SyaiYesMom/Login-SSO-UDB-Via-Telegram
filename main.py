@@ -14,7 +14,6 @@ from telegram.ext import (
 
 BOT_TOKEN = "TOKEN TELEGRAM"
 
-# State untuk ConversationHandler
 CAPTCHA, USERNAME, PASSWORD = range(3)
 
 session = cffi_requests.Session()
@@ -59,10 +58,8 @@ def login(username, password, token, captcha_text):
     }
     response = session.post('https://auth.sso.udb.ac.id/', data=data)
 
-    # Ambil cookies dari session setelah login
     cookies_dict = dict(session.cookies)
 
-    # Simpan ke cookies.json
     with open("cookies.json", "w") as f:
         json.dump(cookies_dict, f, indent=4)
 
@@ -75,14 +72,12 @@ def afterlogin():
     return response
 
 def main():
-    # Tidak perlu kirim cookies secara manual — session sudah menyimpannya otomatis
     response = session.get('https://mahasiswa.udb.ac.id/main')
     with open("main.html", "w", encoding="utf-8") as f:
         f.write(response.text)
     return response
 
 
-# ─── Handler Telegram ────────────────────────────────────────────────────────
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Ambil captcha, kirim gambar ke user, minta jawaban captcha"""
@@ -91,7 +86,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     token, image_base64 = captcha()
     save_captcha_image(image_base64)
 
-    # Simpan token ke user_data agar bisa dipakai saat login
     context.user_data['token'] = token
 
     with open("captcha.png", "rb") as img:
@@ -101,21 +95,18 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_captcha(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Simpan jawaban captcha, minta username"""
     context.user_data['captcha'] = update.message.text
     await update.message.reply_text("👤 Masukkan username (NIM) Anda:")
     return USERNAME
 
 
 async def handle_username(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Simpan username, minta password"""
     context.user_data['username'] = update.message.text
     await update.message.reply_text("🔑 Masukkan password Anda:")
     return PASSWORD
 
 
 async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Simpan password, jalankan login, kirim hasil"""
     context.user_data['password'] = update.message.text
 
     username   = context.user_data['username']
@@ -128,7 +119,6 @@ async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         res, cookies_dict = login(username, password, token, captcha_r)
 
-        # Simpan response ke login.html
         with open("login.html", "w", encoding="utf-8") as f:
             f.write(res.text)
 
@@ -140,7 +130,6 @@ async def handle_password(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 f"🍪 Cookies tersimpan di cookies.json:\n{cookies_info}"
             )
 
-            # Jalankan urutan: afterlogin → main
             await update.message.reply_text("⏳ Redirect ke mahasiswa.udb.ac.id...")
             afterlogin()
 
@@ -166,7 +155,6 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return ConversationHandler.END
 
 
-# ─── Main ────────────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
